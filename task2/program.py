@@ -36,6 +36,8 @@ def swap(char_list):
     char_list.sort()
     for i in range(len(char_list)):
         for j in range(i + 1, len(char_list)):
+            if char_list[i] == char_list[j]:
+                continue
             pair = [char_list[i], char_list[j]]
             pairs.append(pair)
     return pairs
@@ -45,4 +47,5 @@ if __name__ == "__main__":
     # Example function calls below, you can add your own to test the task2 function
     print(task2("spain.txt", "ABE"))
     print(task2("ai.txt", "XZ"))
+    print(task2("ai.txt", "AA"))
     print(task2("cabs.txt", "ABZD"))
