@@ -23,7 +23,6 @@ def task4(algorithm, message_filename, dictionary_filename, threshold, letters, 
     return ''
 
 def dfs():
-
     return None
 
 def bfs():
