@@ -25,9 +25,10 @@ def task6(algorithm, message_filename, dictionary_filename, threshold, letters, 
     elif algorithm == 'g':
         output, expanded_10_message = greedy(message, dict_list, threshold, first_child)
     elif algorithm == 'a':
-        a_star()
+        output, expanded_10_message = a_star(message, dict_list, threshold, first_child)
 
     if debug == 'y':
+        output += "\n\n"
         output += "First few expanded states:\n"
         output += '\n\n'.join(expanded_10_message)
     return output
@@ -79,8 +80,7 @@ def dfs(message, dict_list, threshold, original_childs):
     output += print_solution(solution, key, path_cost)
     output += f"Num nodes expanded: {num_node_expanded}\n"
     output += f"Max fringe size: {max_fringe_size}\n"
-    output += f"Max depth: {max_depth}\n"
-    output += "\n"
+    output += f"Max depth: {max_depth}"
         
     return output, expanded_10_message
 
@@ -131,8 +131,7 @@ def bfs(message, dict_list, threshold, original_childs):
     output += print_solution(solution, key, path_cost)
     output += f"Num nodes expanded: {num_node_expanded}\n"
     output += f"Max fringe size: {max_fringe_size}\n"
-    output += f"Max depth: {max_depth}\n"
-    output += "\n"
+    output += f"Max depth: {max_depth}"
         
     return output, expanded_10_message
 
@@ -159,12 +158,22 @@ def greedy(message, dict_list, threshold, original_childs):
     # initialise independent global variable
     num_node_expanded = 0
     max_depth = 0
-    fringe = [Node([], h)] # this starter node is the root node where h is original frequency compare to goal frequency
+    fringe = {
+        0: [],
+        1: [],
+        2: [],
+        3: [],
+    } # this fringe had their h value as a key to access a list of node. We assume it had only 0-3 h value
+    fringe[h].append(Node([], h)) # this starter node is the root node where h is original frequency compare to goal frequency
             
     while True:
         # get the first element on the list and delete it
         num_node_expanded += 1
-        node = fringe.pop(0)
+        node = None
+        for key_h in fringe.keys():
+            if len(fringe[key_h]) > 0:
+                node = fringe[key_h].pop(0)
+                break
         max_depth = max(max_depth, node.depth)
         
         # perform the swap message on current node
@@ -192,17 +201,10 @@ def greedy(message, dict_list, threshold, original_childs):
             ## set the h value to new node
             new_node.set_h(h)
             
-            # add new node to the list with priority queue where smaller h will be on the front
-            found = False
-            for i in range(len(fringe)):
-                if fringe[i].h > new_node.h:
-                    fringe.insert(i, new_node)
-                    found = True
-                    break
-            if not found:
-                fringe.append(new_node)
+            # add new node to the list with respect to h value
+            fringe[h].append(new_node)
                     
-        max_fringe_size = max(max_fringe_size, len(fringe))
+        max_fringe_size = max(max_fringe_size, len(fringe[0])+len(fringe[1])+len(fringe[2])+len(fringe[3]))
         
         # break the loop if expanded more than 1000 node
         if num_node_expanded >= 1000:
@@ -212,13 +214,84 @@ def greedy(message, dict_list, threshold, original_childs):
     output += print_solution(solution, key, path_cost)
     output += f"Num nodes expanded: {num_node_expanded}\n"
     output += f"Max fringe size: {max_fringe_size}\n"
-    output += f"Max depth: {max_depth}\n"
-    output += "\n"
+    output += f"Max depth: {max_depth}"
         
     return output, expanded_10_message
 
-def a_star():
-    return None
+def a_star(message, dict_list, threshold, original_childs):
+    # initialise output
+    expanded_10_message = []
+    key = ""
+    solution = ""
+    path_cost = 0
+    max_fringe_size = 0
+    output = ""
+    
+    # calculate original alphabet frequency from message
+    GOAL_KEY_ORDERING = "ETAONS"
+    ORIGINAL_FREQ = generate_key_frequency(message, "AENOST")
+    h = count_match_freq(ORIGINAL_FREQ, GOAL_KEY_ORDERING)
+    
+    # initialise independent global variable
+    num_node_expanded = 0
+    max_depth = 0
+    fringe = {} # this fringe had their h+depth value as a key to access a list of node.
+    fringe[h] = [Node([], h)] # this starter node is the root node where h is original frequency compare to goal frequency
+            
+    while True:
+        # get the first element on the list and delete it
+        num_node_expanded += 1
+        node = None
+        for key_h in fringe.keys():
+            if len(fringe[key_h]) > 0:
+                node = fringe[key_h].pop(0)
+                break
+        max_depth = max(max_depth, node.depth)
+        
+        # perform the swap message on current node
+        test_message = swap(message, node.get_pairs())
+        if num_node_expanded <= 10: # the first 10 expanded node will be remember to memory
+            expanded_10_message.append(test_message)
+        
+        # check if the message is threshold% in dictionary
+        percent = count_words(test_message.split(), dict_list)
+        if percent >= threshold:
+            key = node_to_key(node.get_pairs())
+            solution = test_message
+            path_cost = node.depth
+            break
+        
+        # append the new node to the fringe
+        for child in original_childs:
+            new_node = Node(node.get_pairs() + [child])
+            
+            # calculate h value of new node
+            ## swap the frequency in original dictionary accorded to key swap in new node
+            new_freq = swap_key_frequency(ORIGINAL_FREQ, new_node.get_pairs())
+            ## calculate h value from the new frequency
+            h = count_match_freq(new_freq, GOAL_KEY_ORDERING)
+            ## set the h value to new node
+            new_node.set_h(h)
+            
+            # add new node to the list with priority queue where smaller h+depth will be on the front
+            if new_node.h+new_node.depth in fringe:
+                fringe[new_node.h+new_node.depth].append(new_node)
+            else:
+                fringe[new_node.h+new_node.depth] = [new_node]
+                    
+        max_fringe_size = max(max_fringe_size, sum(len(nodes) for nodes in fringe.values()))
+        
+        # break the loop if expanded more than 1000 node
+        if num_node_expanded >= 1000:
+            break
+    
+    # gathering output text
+    output += print_solution(solution, key, path_cost)
+    output += f"Num nodes expanded: {num_node_expanded}\n"
+    output += f"Max fringe size: {max_fringe_size}\n"
+    output += f"Max depth: {max_depth}"
+        
+    return output, expanded_10_message
 
 class Node():
     def __init__(self, pairs: list, h=0) -> None:
@@ -235,6 +308,12 @@ class Node():
     
     def set_h(self, new_h: int) -> None:
         self.h = new_h
+    
+    def __repr__(self):
+        return "Node: " + str(self.pairs)
+    
+    def __str__(self):
+        return self.pairs
 
 def count_match_freq(original_freq: dict, goal_freq: str) -> int:
     # sort the alphabet by frequency to key string
@@ -310,5 +389,5 @@ def generate_child(char_list: list) -> list:
 if __name__ == '__main__':
     # Example function calls below, you can add your own to test the task6 function
     print(task6('g', 'secret_msg.txt', 'common_words.txt', 90, 'AENOST', 'n'))
-    
+    print(task6('a', 'secret_msg.txt', 'common_words.txt', 90, 'AENOST', 'n'))
     
