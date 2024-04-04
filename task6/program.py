@@ -249,7 +249,7 @@ def count_match_freq(original_freq: dict, goal_freq: str) -> int:
     return math.ceil(h/2)
 
 def swap_key_frequency(original_freq: dict, pairs: list) -> dict:
-    alp_freq = original_freq
+    alp_freq = dict(original_freq)
     for pair in pairs:
         temp = alp_freq[pair[0]]
         alp_freq[pair[0]] = alp_freq[pair[1]]
@@ -310,6 +310,5 @@ def generate_child(char_list: list) -> list:
 if __name__ == '__main__':
     # Example function calls below, you can add your own to test the task6 function
     print(task6('g', 'secret_msg.txt', 'common_words.txt', 90, 'AENOST', 'n'))
-
     
     
