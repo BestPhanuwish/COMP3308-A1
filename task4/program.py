@@ -1,3 +1,6 @@
+import itertools
+
+
 def task4(algorithm, message_filename, dictionary_filename, threshold, letters, debug):
     
     with open(message_filename, 'r') as f:
@@ -17,7 +20,7 @@ def task4(algorithm, message_filename, dictionary_filename, threshold, letters, 
     elif algorithm == 'b':
         output, expanded_10_message = bfs(message, dict_list, threshold, first_child)
     elif algorithm == 'i':
-        ids()
+        output, expanded_10_message = ids(message, dict_list, threshold, first_child)
     elif algorithm == 'u':
         ucs()
 
@@ -130,11 +133,96 @@ def bfs(message, dict_list, threshold, original_childs):
         
     return output, expanded_10_message
 
-def ids():
-    return None
+def ids(message, dict_list, threshold, original_childs):
 
-def ucs():
-    return None
+    # initialise output
+    expanded_10_message = []
+    key = ""
+    solution = ""
+    path_cost = 0
+    max_fringe_size = 0
+    output = ""
+    # initialise global variable
+    num_node_expanded = 0
+    max_depth = 0
+    
+    for depth_limit in itertools.count():
+        fringe = [Node([])]
+        while fringe:
+            num_node_expanded += 1
+            node = fringe.pop(0)
+            max_depth = max(max_depth, node.depth)
+            test_message = swap(message, node.get_pairs())
+            if num_node_expanded <= 10:
+                expanded_10_message.append(test_message)
+            percent = count_words(test_message.split(), dict_list)
+            if percent >= threshold:
+                key = node_to_key(node.get_pairs())
+                solution = test_message
+                path_cost = node.depth
+                break
+            if node.depth < depth_limit:
+                for child in reversed(original_childs):
+                    new_node = Node(node.get_pairs() + [child])
+                    fringe.insert(0, new_node)
+            max_fringe_size = max(max_fringe_size, len(fringe))
+            if num_node_expanded >= 1000:
+                break
+        
+        # gathering output text
+        output += print_solution(solution, key, path_cost)
+        output += f"Num nodes expanded: {num_node_expanded}\n"
+        output += f"Max fringe size: {max_fringe_size}\n"
+        output += f"Max depth: {max_depth}\n"
+        output += "\n"
+        if solution:
+            break
+    return output, expanded_10_message
+
+import heapq
+
+def ucs(message, dict_list, threshold, original_childs):
+
+    # initialise output
+    expanded_10_message = []
+    key = ""
+    solution = ""
+    path_cost = 0
+    max_fringe_size = 0
+    output = ""
+    # initialise global variable
+    num_node_expanded = 0
+    max_depth = 0
+    fringe = [(0, Node([]))]
+
+    while fringe:
+        cost, node = heapq.heappop(fringe)
+        num_node_expanded += 1
+        max_depth = max(max_depth, node.depth)
+        test_message = swap(message, node.get_pairs())
+        if num_node_expanded <= 10:
+            expanded_10_message.append(test_message)
+        percent = count_words(test_message.split(), dict_list)
+        if percent >= threshold:
+            key = node_to_key(node.get_pairs())
+            solution = test_message
+            path_cost = node.depth
+            break
+        for child in original_childs:
+            new_node = Node(node.get_pairs() + [child])
+            new_cost = cost + 1
+            heapq.heappush(fringe, (new_cost, new_node))
+        max_fringe_size = max(max_fringe_size, len(fringe))
+        if num_node_expanded >= 1000:
+            break
+    
+    # gathering output text
+    output += print_solution(solution, key, path_cost)
+    output += f"Num nodes expanded: {num_node_expanded}\n"
+    output += f"Max fringe size: {max_fringe_size}\n"
+    output += f"Max depth: {max_depth}\n"
+    output += "\n"
+    return output, expanded_10_message
 
 class Node():
     def __init__(self, pairs: list) -> None:
