@@ -1,4 +1,5 @@
 import itertools
+from collections import deque 
 import time
 
 def task4(algorithm, message_filename, dictionary_filename, threshold, letters, debug):
@@ -42,12 +43,12 @@ def dfs(message, dict_list, threshold, original_childs):
     # initialise global variable
     num_node_expanded = 0
     max_depth = 0
-    fringe = [Node([])]
+    fringe = deque([Node([])])
     
     while True:
         # get the first element on the list and delete it
         num_node_expanded += 1
-        node = fringe.pop(0)
+        node = fringe.popleft()
         max_depth = max(max_depth, node.depth)
         
         # perform the swap on current node
@@ -66,7 +67,7 @@ def dfs(message, dict_list, threshold, original_childs):
         # append the new node to the fringe (DFS we added it on the front)
         for child in reversed(original_childs): #DFS we need reverse the list so that left most node end up at the front of the list
             new_node = Node(node.get_pairs() + [child])
-            fringe.insert(0, new_node)
+            fringe.appendleft(new_node)
         max_fringe_size = max(max_fringe_size, len(fringe))
         
         # break the loop if expanded more than 1000 node
@@ -93,12 +94,12 @@ def bfs(message, dict_list, threshold, original_childs):
     # initialise global variable
     num_node_expanded = 0
     max_depth = 0
-    fringe = [Node([])]
+    fringe = deque([Node([])])
     
     while True:
         # get the first element on the list and delete it
         num_node_expanded += 1
-        node = fringe.pop(0)
+        node = fringe.popleft()
         max_depth = max(max_depth, node.depth)
         
         # perform the swap message on current node
@@ -146,10 +147,10 @@ def ids(message, dict_list, threshold, original_childs):
     max_depth = 0
 
     for depth_limit in itertools.count():
-        fringe = [Node([])]
+        fringe = deque([Node([])])
         while fringe:
             num_node_expanded += 1
-            node = fringe.pop(0)
+            node = fringe.popleft()
             max_depth = max(max_depth, node.depth)
             test_message = swap(message, node.get_pairs())
             if num_node_expanded <= 10:
@@ -163,7 +164,7 @@ def ids(message, dict_list, threshold, original_childs):
             if node.depth < depth_limit:
                 for child in reversed(original_childs):
                     new_node = Node(node.get_pairs() + [child])
-                    fringe.insert(0, new_node)
+                    fringe.appendleft(new_node)
             max_fringe_size = max(max_fringe_size, len(fringe))
             if num_node_expanded >= 1000:
                 break
@@ -190,10 +191,10 @@ def ucs(message, dict_list, threshold, original_childs):
     # initialise global variable
     num_node_expanded = 0
     max_depth = 0
-    fringe = [Node([])]
+    fringe = deque([Node([])])
 
     while fringe:
-        node = fringe.pop(0)
+        node = fringe.popleft()
         num_node_expanded += 1
         max_depth = max(max_depth, node.depth)
         test_message = swap(message, node.get_pairs())
@@ -281,6 +282,7 @@ if __name__ == '__main__':
     # Calculate the runtime
     runtime = end_time - start_time
     print(f"Runtime of dfs: {runtime} seconds")
+
     print(task4('b', 'cabs.txt', 'common_words.txt', 100, 'ABC', 'y'))
     print(task4('i', 'cabs.txt', 'common_words.txt', 100, 'ABC', 'y'))
     print(task4('u', 'cabs.txt', 'common_words.txt', 100, 'ABC', 'y'))
