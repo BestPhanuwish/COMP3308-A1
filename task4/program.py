@@ -42,7 +42,9 @@ def dfs(message, dict_list, threshold, original_childs):
     # initialise global variable
     num_node_expanded = 0
     max_depth = 0
-    fringe = [Node([])]
+    root_node = Node([])
+    root_node.set_parent_message(message)
+    fringe = [root_node]
     
     while True:
         # get the first element on the list and delete it
@@ -51,12 +53,12 @@ def dfs(message, dict_list, threshold, original_childs):
         max_depth = max(max_depth, node.depth)
         
         # perform the swap on current node
-        test_message = swap(message, node.get_pairs())
+        test_message = swap(node.parent_message, node.get_pairs()[node.depth-1:])
         if num_node_expanded <= 10: # the first 10 expanded node will be remember to memory
             expanded_10_message.append(test_message)
         
         # check if the message is threshold% in dictionary
-        percent = count_words(message.split(), dict_list)
+        percent = count_words(test_message.split(), dict_list)
         if percent >= threshold:
             key = node_to_key(node.get_pairs())
             solution = test_message
@@ -66,6 +68,7 @@ def dfs(message, dict_list, threshold, original_childs):
         # append the new node to the fringe (DFS we added it on the front)
         for child in reversed(original_childs): #DFS we need reverse the list so that left most node end up at the front of the list
             new_node = Node(node.get_pairs() + [child])
+            new_node.set_parent_message(test_message)
             fringe.insert(0, new_node)
         max_fringe_size = max(max_fringe_size, len(fringe))
         
@@ -146,12 +149,14 @@ def ids(message, dict_list, threshold, original_childs):
     max_depth = 0
 
     for depth_limit in itertools.count():
-        fringe = [Node([])]
+        root_node = Node([])
+        root_node.set_parent_message(message)
+        fringe = [root_node]
         while fringe:
             num_node_expanded += 1
             node = fringe.pop(0)
             max_depth = max(max_depth, node.depth)
-            test_message = swap(message, node.get_pairs())
+            test_message = swap(node.parent_message, node.get_pairs()[node.depth-1:])
             if num_node_expanded <= 10:
                 expanded_10_message.append(test_message)
             percent = count_words(test_message.split(), dict_list)
@@ -163,6 +168,7 @@ def ids(message, dict_list, threshold, original_childs):
             if node.depth < depth_limit:
                 for child in reversed(original_childs):
                     new_node = Node(node.get_pairs() + [child])
+                    new_node.set_parent_message(test_message)
                     fringe.insert(0, new_node)
             max_fringe_size = max(max_fringe_size, len(fringe))
             if num_node_expanded >= 1000:
@@ -223,6 +229,7 @@ class Node():
     def __init__(self, pairs: list) -> None:
         self.pairs = pairs
         self.depth = len(pairs)
+        self.parent_message = ""
     
     def get_pairs(self) -> list:
         return self.pairs
@@ -230,6 +237,9 @@ class Node():
     def add_pair(self, pair: list) -> None:
         self.pairs.append(pair)
         self.depth = len(self.pairs)
+    
+    def set_parent_message(self, message: str) -> None:
+        self.parent_message = message
         
     def __repr__(self):
         return "Node: " + str(self.pairs)
